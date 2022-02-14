@@ -6,7 +6,13 @@ const parseDocument = content => new DOMParser().parseFromString(content);
 
 const parseKML = markup => geojson.kml(parseDocument(markup))
 
-exports.onCreateNode = async ({ node, boundActionCreators, loadNodeContent, createNodeId }) => {
+exports.onCreateNode = async ({
+  node,
+  actions,
+  loadNodeContent,
+  createNodeId,
+  createContentDigest
+}) => {
 
   // we only care about KML content
   if (node.internal.mediaType === "application/vnd.google-earth.kml+xml") {
@@ -18,7 +24,7 @@ exports.onCreateNode = async ({ node, boundActionCreators, loadNodeContent, crea
 
     if (data.type && data.type === "FeatureCollection") {
       if (data.features) {
-        const { createNode } = boundActionCreators
+        const { createNode } = actions
         data.features.forEach(feature => {
           if (feature.type && feature.type === 'Feature' && feature.properties && feature.properties.name) {
             const nodeId = createNodeId(`feature-${feature.properties.name}`)
