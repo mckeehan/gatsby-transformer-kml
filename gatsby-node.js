@@ -15,7 +15,8 @@ exports.createSchemaCustomization = ({ actions }) => {
   const { createTypes } = actions
   const typeDefs = `
     type GPXfile implements Node @dontInfer {
-        features: [Feature]
+        tracks: [Track]
+        waypoints: [Waypoint]
         center: [Float]
         name: String
         absolutePath: String
@@ -24,7 +25,21 @@ exports.createSchemaCustomization = ({ actions }) => {
         myname: String
         slug: String
     }
-    type Feature {
+    type Waypoint {
+        type: String
+        properties: WaypointProperties
+        geometry: WaypointGeometry
+    }
+    type WaypointProperties {
+        name: String
+        time: Date
+        sym: String
+    }
+    type WaypointGeometry {
+        type: String
+        coordinates: [Float]
+    }
+    type Track {
         center: [Float]
         geometry: GPXGeometry
         type: String
@@ -66,10 +81,12 @@ exports.onCreateNode = async ({
     const data = parseGPX(content)
 
     if (data.type && data.type === "FeatureCollection") {
-      if (data.features) {
+      if (data.features && data.features.length > 0 ) {
         const { createNode, createNodeField } = actions
         var pageMinX = pageMinY = pageMaxX = pageMaxY = undefined;
-        data.features.forEach(feature => {
+        const waypoints = data.features.filter( f => ( f && f.geometry && f.geometry.type === "Point" )  )
+        const tracks = data.features.filter( f => ( f && f.geometry && f.geometry.type === "LineString" && f.geometry.coordinates && f.geometry.coordinates.length > 0 )  )
+        tracks.forEach(feature => {
           if (feature.type && feature.type === 'Feature' && feature.properties && feature.properties.name) {
             var minX = minY = maxX = maxY = undefined;
             feature.geometry.coordinates.forEach( cord => {
@@ -97,7 +114,7 @@ exports.onCreateNode = async ({
         }
 
         const nodeId = createNodeId(`gpx-${relativePath}`)
-        const nodeContent = JSON.stringify(data.features)
+        const nodeContent = JSON.stringify(tracks)
         const nodeContentDigest = crypto
           .createHash('md5')
           .update(nodeContent)
@@ -112,9 +129,10 @@ exports.onCreateNode = async ({
             content: nodeContent,
             contentDigest: nodeContentDigest,
           },
-          features: data.features,
+          tracks: tracks,
+          waypoints: waypoints,
           center: [pageCenterX, pageCenterY],
-          name: node.name,
+          name: data.name || node.name,
           absolutePath: node.absolutePath,
           relativePath: node.relativePath,
           mydir: dir,
