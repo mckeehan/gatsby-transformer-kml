@@ -41,6 +41,7 @@ exports.createSchemaCustomization = ({ actions }) => {
         name: String
         time: Date
         sym: String
+        desc: String
     }
     type WaypointGeometry {
         type: String
