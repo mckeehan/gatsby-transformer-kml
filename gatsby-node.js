@@ -30,7 +30,7 @@ exports.createSchemaCustomization = ({ actions }) => {
         name: String
         desc: String
         keywords: String
-        time: Date
+        time: Date @dateformat(formatString: "YYYY-MM-DDTHH:mm:ssZ")
     }
     type Waypoint {
         type: String
@@ -39,7 +39,7 @@ exports.createSchemaCustomization = ({ actions }) => {
     }
     type WaypointProperties {
         name: String
-        time: Date
+        time: Date @dateformat(formatString: "YYYY-MM-DDTHH:mm:ssZ")
         sym: String
         desc: String
     }
@@ -51,21 +51,22 @@ exports.createSchemaCustomization = ({ actions }) => {
         center: [Float]
         geometry: GPXGeometry
         type: String
-        properties: GPXProperties
+        properties: TrackProperties
     }
     type GPXGeometry {
         coordinates: [[Float]]
         type: String
     }
-    type GPXProperties {
+    type TrackProperties {
         name: String
-        time: Date
+        time: Date @dateformat(formatString: "YYYY-MM-DDTHH:mm:ssZ")
         _gpxType: String
         coordinateProperties: CoordinateProperties
         desc: String
+        stroke: String
     }
     type CoordinateProperties {
-      times: [String]
+      times: [Date]
     }
   `
   createTypes(typeDefs)
@@ -111,8 +112,6 @@ exports.onCreateNode = async ({
             feature.center = [ centerX, centerY ];
           }
         })
-
-        //console.log(data.properties);
 
         const nodeId = createNodeId(`gpx-${relativePath}`)
         const nodeContent = JSON.stringify(tracks)
