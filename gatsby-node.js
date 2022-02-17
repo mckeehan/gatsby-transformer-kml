@@ -24,6 +24,13 @@ exports.createSchemaCustomization = ({ actions }) => {
         mydir: String
         myname: String
         slug: String
+        properties: GPXMetadataProperties
+    }
+    type GPXMetadataProperties {
+        name: String
+        desc: String
+        keywords: String
+        time: Date
     }
     type Waypoint {
         type: String
@@ -83,7 +90,6 @@ exports.onCreateNode = async ({
     if (data.type && data.type === "FeatureCollection") {
       if (data.features && data.features.length > 0 ) {
         const { createNode, createNodeField } = actions
-        var pageMinX = pageMinY = pageMaxX = pageMaxY = undefined;
         const waypoints = data.features.filter( f => ( f && f.geometry && f.geometry.type === "Point" )  )
         const tracks = data.features.filter( f => ( f && f.geometry && f.geometry.type === "LineString" && f.geometry.coordinates && f.geometry.coordinates.length > 0 )  )
         tracks.forEach(feature => {
@@ -96,10 +102,6 @@ exports.onCreateNode = async ({
               minY = minY === undefined || x < minY ? y : minY;
               maxX = maxX === undefined || x > maxX ? x : maxX;
               maxY = maxY === undefined || x > maxY ? y : maxY;
-              pageMinX = pageMinX === undefined || x < pageMinX ? x : pageMinX;
-              pageMinY = pageMinY === undefined || x < pageMinY ? y : pageMinY;
-              pageMaxX = pageMaxX === undefined || x > pageMaxX ? x : pageMaxX;
-              pageMaxY = pageMaxY === undefined || x > pageMaxY ? y : pageMaxY;
             })
             if( minX && minY && maxX && maxY ) {
               centerX = ( minX + maxX) / 2;
@@ -108,10 +110,8 @@ exports.onCreateNode = async ({
             feature.center = [ centerX, centerY ];
           }
         })
-        if( pageMinX && pageMinY && pageMaxX && pageMaxY ) {
-          pageCenterX = ( pageMinX + pageMaxX) / 2;
-          pageCenterY = ( pageMinY + pageMaxY) / 2;
-        }
+
+        //console.log(data.properties);
 
         const nodeId = createNodeId(`gpx-${relativePath}`)
         const nodeContent = JSON.stringify(tracks)
@@ -131,13 +131,13 @@ exports.onCreateNode = async ({
           },
           tracks: tracks,
           waypoints: waypoints,
-          center: [pageCenterX, pageCenterY],
           name: data.name || node.name,
           absolutePath: node.absolutePath,
           relativePath: node.relativePath,
           mydir: dir,
           myname: name,
           slug: relativePath,
+          properties: data.properties
         })
 
         createNode(nodeData, createNodeId)
